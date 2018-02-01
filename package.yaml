@@ -37,9 +37,17 @@ executables:
     - reg
     - servant-server
     - warp
+
+    # post 2:
+    - blaze-html
+    - servant-blaze
+
     default-extensions:
     - DataKinds
     - TypeOperators
+
+    # post 2:
+    - OverloadedStrings
 
 tests:
   reg-test:
