@@ -50,6 +50,10 @@ executables:
     - blaze-html
     - servant-blaze
 
+    # post 5:
+    - digestive-functors
+    - digestive-functors-blaze
+
     default-extensions:
     - DataKinds
     - TypeOperators
