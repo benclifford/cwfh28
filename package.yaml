@@ -44,6 +44,7 @@ executables:
     - reg
     - postgresql-simple
     - servant-server
+    - text
     - warp
 
     # post 2:

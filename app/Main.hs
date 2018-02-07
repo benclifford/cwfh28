@@ -4,7 +4,9 @@ import qualified Database.PostgreSQL.Simple as PG
 import Control.Exception (bracket)
 import Control.Monad.IO.Class (liftIO)
 
+import qualified Data.Maybe as M
 import Data.Monoid ( (<>) )
+import qualified Data.Text as T
 
 import Servant.HTML.Blaze as SB
 import qualified Text.Blaze.Html5 as B
@@ -71,7 +73,39 @@ handleRegistration identifier = do
                 B.toHtml (show identifier)
       htmlForRegistration view
 
-handleRegistrationPost = error "We'll implement this later"
+handleRegistrationPost :: Integer -> [(String, String)] -> S.Handler B.Html
+handleRegistrationPost identifier reqBody = do
+  [registration] <- liftIO $ bracket
+    (PG.connectPostgreSQL "user='postgres'")
+    PG.close
+    $ \conn -> do
+      PG.query
+        conn
+        "SELECT firstname, lastname, dob FROM registration WHERE id = ?"
+        [identifier] :: IO [Registration]
+
+  viewValue <- DF.postForm "Registration" (registrationDigestiveForm registration) (servantPathEnv reqBody)
+
+  case viewValue of
+    (view, Nothing) -> 
+      return $ B.docTypeHtml $ do
+        B.body $ do
+          B.h1 $ do "Registration (there were errors): "
+                    B.toHtml (show identifier)
+          htmlForRegistration view
+
+    (_, Just newRegistration) -> do
+      liftIO $ bracket
+        (PG.connectPostgreSQL "user='postgres'")
+        PG.close
+        $ \conn -> PG.execute conn 
+                   "UPDATE registration SET firstname = ?, lastname = ?, dob = ? WHERE id = ?" 
+                   (firstname newRegistration,
+                    lastname newRegistration,
+                    dob newRegistration,
+                    identifier
+                   )
+      return "Record updated."
 
 htmlForRegistration :: DF.View B.Html -> B.Html
 htmlForRegistration view =
@@ -106,4 +140,12 @@ server :: S.Server API
 server = handlePing :<|> handleHtmlPing :<|> handleRegistration
     :<|> handleRegistrationPost
 
+
+servantPathEnv :: Monad m => [(String, String)] -> DF.FormEncType -> m (DF.Env m)
+servantPathEnv reqBody _ = return env
+  where
+      pathAsString = T.unpack . DF.fromPath
+      packAsInput = DF.TextInput . T.pack
+      lookupParam p = lookup (pathAsString p) reqBody
+      env path = return (packAsInput <$> (M.maybeToList (lookupParam path)))
 
