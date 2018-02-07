@@ -113,10 +113,13 @@ htmlForRegistration view =
     ! BA.method "post"
     $ do
       B.p $ do  "First name: "
+                DB.errorList "firstname" view
                 DB.inputText "firstname" view
       B.p $ do  "Last name: "
+                DB.errorList "lastname" view
                 DB.inputText "lastname" view
       B.p $ do  "Date of Birth: "
+                DB.errorList "dob" view
                 DB.inputText "dob" view
       B.p $     DB.inputSubmit "Save" 
 
@@ -125,11 +128,23 @@ htmlForRegistration view =
 registrationDigestiveForm :: Monad m => Registration -> DF.Form B.Html m Registration
 registrationDigestiveForm initial = do
   Registration
-    <$> "firstname" .: DF.string (Just $ firstname initial)
-    <*> "lastname" .: DF.string (Just $ lastname initial)
-    <*> "dob" .: DF.string (Just $ dob initial)
+    <$> "firstname" .: nonEmptyString (Just $ firstname initial)
+    <*> "lastname" .: nonEmptyString (Just $ lastname initial)
+    <*> "dob" .: dateLikeString (Just $ dob initial)
 
 
+nonEmptyString def =
+    (DF.check "This field must not be empty" (/= ""))
+  $ DF.string def
+
+dateLikeString def =
+    (DF.check "This field must look like a date" isDateLike)
+  $ nonEmptyString def
+
+isDateLike :: String -> Bool
+isDateLike s = foldr (&&) True $ map isDateChar s
+  where 
+    isDateChar c = c `elem` ("0123456789-/" :: String)
 
 api :: S.Proxy API
 api = S.Proxy
