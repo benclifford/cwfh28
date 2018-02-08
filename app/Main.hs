@@ -4,10 +4,12 @@ import qualified Database.PostgreSQL.Simple as PG
 import Control.Exception (bracket)
 import Control.Monad.IO.Class (liftIO)
 
+import qualified Data.Csv as CSV
 import qualified Data.Maybe as M
 import Data.Monoid ( (<>) )
 import qualified Data.Text as T
 
+import Servant.CSV.Cassava as SC
 import Servant.HTML.Blaze as SB
 import qualified Text.Blaze.Html5 as B
 import Text.Blaze.Html5 ( (!) )
@@ -37,11 +39,13 @@ type RegistrationAPI = "registration" :> S.Capture "id" Integer :> S.Get '[SB.HT
 
 type RegistrationPostAPI = "registration" :> S.Capture "id" Integer :> S.ReqBody '[S.FormUrlEncoded] [(String,String)] :> S.Post '[HTML] B.Html
 
+type CSVAPI = "admin" :> "csv" :> S.Get '[SC.CSV] [Registration]
 
 type API = PingAPI
       :<|> HtmlPingAPI
       :<|> RegistrationAPI
       :<|> RegistrationPostAPI
+      :<|> CSVAPI
 
 handlePing :: S.Handler String
 handlePing = return "PONG"
@@ -153,7 +157,7 @@ app = S.serve api server
 
 server :: S.Server API
 server = handlePing :<|> handleHtmlPing :<|> handleRegistration
-    :<|> handleRegistrationPost
+    :<|> handleRegistrationPost :<|> handleCSV
 
 
 servantPathEnv :: Monad m => [(String, String)] -> DF.FormEncType -> m (DF.Env m)
@@ -163,4 +167,19 @@ servantPathEnv reqBody _ = return env
       packAsInput = DF.TextInput . T.pack
       lookupParam p = lookup (pathAsString p) reqBody
       env path = return (packAsInput <$> (M.maybeToList (lookupParam path)))
+
+
+
+handleCSV :: S.Handler [Registration]
+handleCSV =
+ liftIO $ bracket
+    (PG.connectPostgreSQL "user='postgres'")
+    PG.close
+    $ \conn -> do
+      PG.query
+        conn
+        "SELECT firstname, lastname, dob FROM registration" ()
+
+instance CSV.ToNamedRecord Registration
+instance CSV.DefaultOrdered Registration
 

@@ -55,6 +55,10 @@ executables:
     - digestive-functors
     - digestive-functors-blaze
 
+    # post 8:
+    - cassava
+    - servant-cassava
+
     default-extensions:
     - DataKinds
     - TypeOperators
