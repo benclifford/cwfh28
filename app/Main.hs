@@ -39,7 +39,7 @@ type RegistrationAPI = "registration" :> S.Capture "id" Integer :> S.Get '[SB.HT
 
 type RegistrationPostAPI = "registration" :> S.Capture "id" Integer :> S.ReqBody '[S.FormUrlEncoded] [(String,String)] :> S.Post '[HTML] B.Html
 
-type CSVAPI = "admin" :> "csv" :> S.Get '[SC.CSV] [Registration]
+type CSVAPI = "admin" :> "csv" :> S.Get '[SC.CSV] (S.Headers '[S.Header "Content-Disposition" String] [Registration])
 
 type API = PingAPI
       :<|> HtmlPingAPI
@@ -170,15 +170,16 @@ servantPathEnv reqBody _ = return env
 
 
 
-handleCSV :: S.Handler [Registration]
-handleCSV =
- liftIO $ bracket
+handleCSV :: S.Handler (S.Headers '[S.Header "Content-Disposition" String] [Registration])
+handleCSV = do
+  rs <- liftIO $ bracket
     (PG.connectPostgreSQL "user='postgres'")
     PG.close
     $ \conn -> do
       PG.query
         conn
         "SELECT firstname, lastname, dob FROM registration" ()
+  return $ S.addHeader "attachment;filename=\"registrations.csv\"" rs
 
 instance CSV.ToNamedRecord Registration
 instance CSV.DefaultOrdered Registration
