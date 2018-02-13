@@ -12,7 +12,7 @@ data Registration = Registration {
   lastname :: String,
   dob :: String,
   swim :: Bool
-} deriving (Show, G.Generic, PG.FromRow)
+} deriving (Show, G.Generic, PG.FromRow, PG.ToRow)
 
 instance GS.Generic Registration
 instance GS.HasDatatypeInfo Registration

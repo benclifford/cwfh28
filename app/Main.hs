@@ -29,6 +29,7 @@ import qualified Network.Wai.Handler.Warp as W
 import Lib
 import Orphans
 import Registration
+import Update
 
 main :: IO ()
 main = W.run 8080 app
@@ -98,14 +99,7 @@ handleRegistrationPost identifier reqBody = do
       liftIO $ bracket
         (PG.connectPostgreSQL "user='postgres'")
         PG.close
-        $ \conn -> PG.execute conn 
-                   "UPDATE registration SET firstname = ?, lastname = ?, dob = ?, swim = ? WHERE id = ?" 
-                   (firstname newRegistration,
-                    lastname newRegistration,
-                    dob newRegistration,
-                    swim newRegistration,
-                    identifier
-                   )
+        $ \conn -> gupdateInto conn "registration" "id = ?" newRegistration [identifier]
       return "Record updated."
 
 htmlForRegistration :: DF.View B.Html -> B.Html
