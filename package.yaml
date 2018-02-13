@@ -30,6 +30,9 @@ library:
     - postgresql-simple
   # post 11:
     - cassava
+  # post 12:
+    - generics-sop
+    - postgresql-simple-sop
   default-extensions:
     - DeriveAnyClass
     - DeriveGeneric
@@ -61,6 +64,9 @@ executables:
     # post 8:
     - cassava
     - servant-cassava
+
+    # post 12:
+    - postgresql-simple-sop
 
     default-extensions:
     - DataKinds

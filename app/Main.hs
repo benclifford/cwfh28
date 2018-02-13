@@ -1,6 +1,8 @@
 module Main where
 
 import qualified Database.PostgreSQL.Simple as PG
+import qualified Database.PostgreSQL.Simple.SOP as PGS
+
 import Control.Exception (bracket)
 import Control.Monad.IO.Class (liftIO)
 
@@ -64,10 +66,7 @@ handleRegistration identifier = do
     (PG.connectPostgreSQL "user='postgres'")
     PG.close
     $ \conn -> do
-      PG.query
-        conn
-        "SELECT firstname, lastname, dob, swim FROM registration WHERE id = ?"
-        [identifier] :: IO [Registration]
+      PGS.gselectFrom conn "registration where id = ?" [identifier]
 
   view <- DF.getForm "Registration" (registrationDigestiveForm registration)
 
@@ -83,10 +82,7 @@ handleRegistrationPost identifier reqBody = do
     (PG.connectPostgreSQL "user='postgres'")
     PG.close
     $ \conn -> do
-      PG.query
-        conn
-        "SELECT firstname, lastname, dob, swim FROM registration WHERE id = ?"
-        [identifier] :: IO [Registration]
+      PGS.gselectFrom conn "registration where id = ?" [identifier]
 
   viewValue <- DF.postForm "Registration" (registrationDigestiveForm registration) (servantPathEnv reqBody)
 
@@ -181,9 +177,7 @@ handleCSV = do
     (PG.connectPostgreSQL "user='postgres'")
     PG.close
     $ \conn -> do
-      PG.query
-        conn
-        "SELECT firstname, lastname, dob, swim FROM registration" ()
+      PGS.gselectFrom conn "registration" ()
   return $ S.addHeader "attachment;filename=\"registrations.csv\"" rs
 
 instance CSV.ToNamedRecord Registration

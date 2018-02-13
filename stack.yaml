@@ -43,6 +43,8 @@ packages:
 extra-deps:
 - digestive-functors-0.8.3.0
 - digestive-functors-blaze-0.6.2.0
+- git: https://github.com/openbrainsrc/postgresql-simple-sop
+  commit: d1834bda124081ad6a39fd4849a40d4b2fa74b3e
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
