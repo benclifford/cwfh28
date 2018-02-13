@@ -24,8 +24,8 @@ import qualified Servant as S
 
 import qualified Network.Wai.Handler.Warp as W
 
-
 import Lib
+import Orphans
 import Registration
 
 main :: IO ()
@@ -66,7 +66,7 @@ handleRegistration identifier = do
     $ \conn -> do
       PG.query
         conn
-        "SELECT firstname, lastname, dob FROM registration WHERE id = ?"
+        "SELECT firstname, lastname, dob, swim FROM registration WHERE id = ?"
         [identifier] :: IO [Registration]
 
   view <- DF.getForm "Registration" (registrationDigestiveForm registration)
@@ -85,7 +85,7 @@ handleRegistrationPost identifier reqBody = do
     $ \conn -> do
       PG.query
         conn
-        "SELECT firstname, lastname, dob FROM registration WHERE id = ?"
+        "SELECT firstname, lastname, dob, swim FROM registration WHERE id = ?"
         [identifier] :: IO [Registration]
 
   viewValue <- DF.postForm "Registration" (registrationDigestiveForm registration) (servantPathEnv reqBody)
@@ -103,10 +103,11 @@ handleRegistrationPost identifier reqBody = do
         (PG.connectPostgreSQL "user='postgres'")
         PG.close
         $ \conn -> PG.execute conn 
-                   "UPDATE registration SET firstname = ?, lastname = ?, dob = ? WHERE id = ?" 
+                   "UPDATE registration SET firstname = ?, lastname = ?, dob = ?, swim = ? WHERE id = ?" 
                    (firstname newRegistration,
                     lastname newRegistration,
                     dob newRegistration,
+                    swim newRegistration,
                     identifier
                    )
       return "Record updated."
@@ -125,6 +126,9 @@ htmlForRegistration view =
       B.p $ do  "Date of Birth: "
                 DB.errorList "dob" view
                 DB.inputText "dob" view
+      B.p $ do  "Can participant swim?: "
+                DB.errorList "swim" view
+                DB.inputCheckbox "swim" view
       B.p $     DB.inputSubmit "Save" 
 
 
@@ -135,6 +139,7 @@ registrationDigestiveForm initial = do
     <$> "firstname" .: nonEmptyString (Just $ firstname initial)
     <*> "lastname" .: nonEmptyString (Just $ lastname initial)
     <*> "dob" .: dateLikeString (Just $ dob initial)
+    <*> "swim" .: DF.bool (Just $ swim initial)
 
 
 nonEmptyString def =
@@ -178,7 +183,7 @@ handleCSV = do
     $ \conn -> do
       PG.query
         conn
-        "SELECT firstname, lastname, dob FROM registration" ()
+        "SELECT firstname, lastname, dob, swim FROM registration" ()
   return $ S.addHeader "attachment;filename=\"registrations.csv\"" rs
 
 instance CSV.ToNamedRecord Registration

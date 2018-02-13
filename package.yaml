@@ -25,8 +25,11 @@ dependencies:
 library:
   source-dirs: src
 
+  dependencies:
   # post 3:
-  dependencies: postgresql-simple
+    - postgresql-simple
+  # post 11:
+    - cassava
   default-extensions:
     - DeriveAnyClass
     - DeriveGeneric
