@@ -11,7 +11,10 @@ data Registration = Registration {
   firstname :: String,
   lastname :: String,
   dob :: String,
-  swim :: Bool
+  swim :: Bool,
+  nonce :: Maybe String,
+  email :: Maybe String,
+  status :: String
 } deriving (Show, G.Generic, PG.FromRow, PG.ToRow)
 
 instance GS.Generic Registration
