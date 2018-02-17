@@ -68,6 +68,9 @@ executables:
     # post 12:
     - postgresql-simple-sop
 
+  # post 15:
+    - random
+
     default-extensions:
     - DataKinds
     - TypeOperators
