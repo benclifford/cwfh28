@@ -29,6 +29,7 @@ import qualified Servant as S
 
 import qualified Network.Wai.Handler.Warp as W
 
+import Config
 import qualified Invitation as I
 import Lib
 import Orphans
@@ -193,6 +194,8 @@ invitationDigestiveForm =
 doInvitation :: I.Invitation -> IO B.Html
 doInvitation invitation = do
 
+  config <- getConfig
+
   newNonce <- generateNonce
 
   let registration = Registration {
@@ -212,7 +215,7 @@ doInvitation invitation = do
     $ \conn -> do
       PGS.ginsertInto conn "registration" registration
 
-  let url = "http://localhost:8080/registration/" ++ newNonce
+  let url = (urlbase config) ++ "/registration/" ++ newNonce
 
   return $ B.docTypeHtml $ do
     B.head $ do

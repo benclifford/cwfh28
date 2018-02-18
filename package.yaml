@@ -33,6 +33,8 @@ library:
   # post 12:
     - generics-sop
     - postgresql-simple-sop
+  # post 15:
+    - yaml
   default-extensions:
     - DeriveAnyClass
     - DeriveGeneric
