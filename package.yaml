@@ -35,6 +35,14 @@ library:
     - postgresql-simple-sop
   # post 15:
     - yaml
+  # post 17:
+    - HaskellNet
+    - HaskellNet-SSL
+    - bytestring
+    - mime-mail
+    - network
+    - text
+
   default-extensions:
     - DeriveAnyClass
     - DeriveGeneric

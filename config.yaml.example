@@ -1,2 +1,6 @@
 urlbase: "http://localhost:8080"
-
+smtpFrom: "reg@cwfh28.example.com"
+smtpServer: "smtp.example.com"
+smtpPort: "587"
+smtpUser: "your_user_id"
+smtpPassword: "yourpass"

@@ -30,6 +30,7 @@ import qualified Servant as S
 import qualified Network.Wai.Handler.Warp as W
 
 import Config
+import InvitationEmail
 import qualified Invitation as I
 import Lib
 import Orphans
@@ -52,6 +53,8 @@ type CSVAPI = "admin" :> "csv" :> S.Get '[SC.CSV] (S.Headers '[S.Header "Content
 type InvitationGetAPI = "admin" :> "invite" :> S.Get '[SB.HTML] B.Html
 type InvitationPostAPI = "admin" :> "invite" :> S.ReqBody '[S.FormUrlEncoded] [(String,String)] :> S.Post '[SB.HTML] B.Html
 
+type MailTestAPI = "admin" :> "mailtest" :> S.Get '[SB.HTML] B.Html
+
 type API = PingAPI
       :<|> HtmlPingAPI
       :<|> RegistrationAPI
@@ -59,6 +62,7 @@ type API = PingAPI
       :<|> CSVAPI
       :<|> InvitationGetAPI
       :<|> InvitationPostAPI
+      :<|> MailTestAPI
 
 handlePing :: S.Handler String
 handlePing = return "PONG"
@@ -250,6 +254,7 @@ server :: S.Server API
 server = handlePing :<|> handleHtmlPing :<|> handleRegistration
     :<|> handleRegistrationPost :<|> handleCSV
     :<|> handleInvitationGet :<|> handleInvitationPost
+    :<|> handleMailTest
 
 
 servantPathEnv :: Monad m => [(String, String)] -> DF.FormEncType -> m (DF.Env m)
@@ -273,4 +278,9 @@ handleCSV = do
 
 instance CSV.ToNamedRecord Registration
 instance CSV.DefaultOrdered Registration
+
+
+handleMailTest = do
+  liftIO $ sendTestMail
+  return $ B.p "mail test sent"
 
