@@ -3,7 +3,6 @@ module Main where
 import qualified Database.PostgreSQL.Simple as PG
 import qualified Database.PostgreSQL.Simple.SOP as PGS
 
-import Control.Exception (bracket)
 import Control.Monad.IO.Class (liftIO)
 
 import qualified Data.Csv as CSV
@@ -30,6 +29,7 @@ import qualified Servant as S
 import qualified Network.Wai.Handler.Warp as W
 
 import Config
+import DB
 import InvitationEmail
 import qualified Invitation as I
 import Lib
@@ -77,11 +77,7 @@ handleHtmlPing = return $ B.docTypeHtml $ do
 
 handleRegistration :: String -> S.Handler B.Html
 handleRegistration identifier = do
-  [registration] <- liftIO $ bracket
-    (PG.connectPostgreSQL "user='postgres'")
-    PG.close
-    $ \conn -> do
-      PGS.gselectFrom conn "registration where nonce = ?" [identifier]
+  registration <- selectByNonce identifier
 
   view <- DF.getForm "Registration" (registrationDigestiveForm registration)
 
@@ -93,11 +89,7 @@ handleRegistration identifier = do
 
 handleRegistrationPost :: String -> [(String, String)] -> S.Handler B.Html
 handleRegistrationPost identifier reqBody = do
-  [registration] <- liftIO $ bracket
-    (PG.connectPostgreSQL "user='postgres'")
-    PG.close
-    $ \conn -> do
-      PGS.gselectFrom conn "registration where nonce = ?" [identifier]
+  registration <- selectByNonce identifier
 
   viewValue <- DF.postForm "Registration" (registrationDigestiveForm registration) (servantPathEnv reqBody)
 
@@ -110,10 +102,7 @@ handleRegistrationPost identifier reqBody = do
           htmlForRegistration view
 
     (_, Just newRegistration) -> do
-      liftIO $ bracket
-        (PG.connectPostgreSQL "user='postgres'")
-        PG.close
-        $ \conn -> gupdateInto conn "registration" "nonce = ?" newRegistration [identifier]
+      withDB $ \conn -> gupdateInto conn "registration" "nonce = ?" newRegistration [identifier]
       return "Record updated."
 
 
@@ -213,10 +202,7 @@ doInvitation invitation = do
     
   }
 
-  liftIO $ bracket
-    (PG.connectPostgreSQL "user='postgres'")
-    PG.close
-    $ \conn -> do
+  withDB $ \conn -> do
       PGS.ginsertInto conn "registration" registration
 
   let url = (urlbase config) ++ "/registration/" ++ newNonce
@@ -271,10 +257,7 @@ servantPathEnv reqBody _ = return env
 
 handleCSV :: S.Handler (S.Headers '[S.Header "Content-Disposition" String] [Registration])
 handleCSV = do
-  rs <- liftIO $ bracket
-    (PG.connectPostgreSQL "user='postgres'")
-    PG.close
-    $ \conn -> do
+  rs <- withDB $ \conn ->
       PGS.gselectFrom conn "registration" ()
   return $ S.addHeader "attachment;filename=\"registrations.csv\"" rs
 

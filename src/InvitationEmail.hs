@@ -1,7 +1,6 @@
 {-# Language OverloadedStrings #-}
 module InvitationEmail where
 
-import Control.Exception (bracket)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Maybe (fromMaybe)
@@ -19,15 +18,13 @@ import qualified Text.Blaze.Html5.Attributes as BA
 import qualified Text.Blaze.Html.Renderer.Text as BT
 
 import Config
+import DB
 import Registration
 
 sendInvitationEmail identifier = do
   c <- getConfig
 
-  [r] <- liftIO $ bracket
-    (PG.connectPostgreSQL "user='postgres'")
-    PG.close
-    $ \conn -> PGS.gselectFrom conn "registration where nonce = ?" [identifier]
+  r <- selectByNonce identifier
 
   let ub = urlbase c
   let url = ub <> "/registration/" <> identifier
