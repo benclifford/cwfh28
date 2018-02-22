@@ -42,6 +42,8 @@ library:
     - mime-mail
     - network
     - text
+  # post 18:
+    - blaze-html
 
   default-extensions:
     - DeriveAnyClass

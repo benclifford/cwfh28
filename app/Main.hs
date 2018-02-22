@@ -221,6 +221,8 @@ doInvitation invitation = do
 
   let url = (urlbase config) ++ "/registration/" ++ newNonce
 
+  sendInvitationEmail newNonce
+
   return $ B.docTypeHtml $ do
     B.head $ do
       B.title "Invitation Processed"
