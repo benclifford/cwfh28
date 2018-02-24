@@ -79,13 +79,35 @@ handleRegistration :: String -> S.Handler B.Html
 handleRegistration identifier = do
   registration <- selectByNonce identifier
 
+  if (editableStatus . status) registration
+  then handleEditableRegistration registration
+  else handleReadOnlyRegistration registration
+
+handleEditableRegistration :: Registration -> S.Handler B.Html
+handleEditableRegistration registration = do
+
   view <- DF.getForm "Registration" (registrationDigestiveForm registration)
 
   return $ B.docTypeHtml $ do
     B.body $ do
       B.h1 $ do "Registration "
-                B.toHtml (show identifier)
+                B.toHtml (show $ nonce registration)
       htmlForRegistration view
+
+handleReadOnlyRegistration :: Registration -> S.Handler B.Html
+handleReadOnlyRegistration registration =
+  return $ B.docTypeHtml $ do
+    B.body $ do
+      B.h1 $ do "Completed registration " 
+                B.toHtml (show $ nonce registration)
+      B.p $ "First name: " <> (fromString . firstname) registration
+      B.p $ "Last name: " <> (fromString . lastname) registration
+      B.p $ "Date of birth: " <> (fromString . dob) registration
+
+editableStatus :: String -> Bool
+editableStatus "N" = True
+editableStatus "C" = False
+editableStatus _ = False
 
 handleRegistrationPost :: String -> [(String, String)] -> S.Handler B.Html
 handleRegistrationPost identifier reqBody = do
@@ -102,7 +124,8 @@ handleRegistrationPost identifier reqBody = do
           htmlForRegistration view
 
     (_, Just newRegistration) -> do
-      withDB $ \conn -> gupdateInto conn "registration" "nonce = ?" newRegistration [identifier]
+      let n = newRegistration { status = "C" }
+      withDB $ \conn -> gupdateInto conn "registration" "nonce = ?" n [identifier]
       return "Record updated."
 
 
