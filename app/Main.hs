@@ -157,9 +157,9 @@ registrationDigestiveForm initial = do
     <*> "lastname" .: nonEmptyString (Just $ lastname initial)
     <*> "dob" .: dateLikeString (Just $ dob initial)
     <*> "swim" .: DF.bool (Just $ swim initial)
-    <*> "nonce" .: DF.optionalString (nonce initial)
+    <*> (pure . nonce) initial
     <*> "email" .: DF.optionalString (email initial)
-    <*> "status" .: nonEmptyString (Just $ status initial)
+    <*> (pure . status) initial
 
 
 handleInvitationGet :: S.Handler B.Html
