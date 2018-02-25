@@ -3,6 +3,7 @@ module Main where
 import qualified Database.PostgreSQL.Simple as PG
 import qualified Database.PostgreSQL.Simple.SOP as PGS
 
+import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 
 import qualified Data.Csv as CSV
@@ -124,8 +125,11 @@ handleRegistrationPost identifier reqBody = do
           htmlForRegistration view
 
     (_, Just newRegistration) -> do
-      let n = newRegistration { status = "C" }
-      withDB $ \conn -> gupdateInto conn "registration" "nonce = ?" n [identifier]
+      let oldOcc = occ newRegistration
+      newOcc <- liftIO $ generateOCC
+      let n = newRegistration { status = "C", occ = newOcc}
+      rows <- withDB $ \conn -> gupdateInto conn "registration" "nonce = ? AND occ = ?" n (identifier, occ newRegistration)
+      when (rows /= 1) $ error "Registration POST did not update exactly one row"
       return "Record updated."
 
 
@@ -134,6 +138,8 @@ htmlForRegistration view =
   B.form
     ! BA.method "post"
     $ do
+      DB.inputHidden "occ" view
+      DB.errorList "occ" view
       B.p $ do  "First name: "
                 DB.errorList "firstname" view
                 DB.inputText "firstname" view
@@ -158,9 +164,15 @@ registrationDigestiveForm initial = do
     <*> "dob" .: dateLikeString (Just $ dob initial)
     <*> "swim" .: DF.bool (Just $ swim initial)
     <*> (pure . nonce) initial
+    <*> "occ" .: occVersion (occ initial)
     <*> "email" .: DF.optionalString (email initial)
     <*> (pure . status) initial
 
+occVersion dbOCC = 
+  DF.check 
+    "This form has been modified by someone else - please reload" 
+    (\newOCC -> show newOCC == show dbOCC)
+  $ DF.stringRead "OCC Version" (Just $ dbOCC)
 
 handleInvitationGet :: S.Handler B.Html
 handleInvitationGet = do
@@ -214,12 +226,15 @@ doInvitation invitation = do
 
   newNonce <- generateNonce
 
+  newOCC <- generateOCC
+
   let registration = Registration {
     firstname = I.firstname invitation,
     lastname = I.lastname invitation,
     dob = "",
     swim = False,
     nonce = Just newNonce,
+    occ = newOCC,
     email = Just (I.email invitation),
     status = "N"
     

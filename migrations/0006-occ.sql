@@ -1,0 +1,3 @@
+ALTER TABLE registration ADD COLUMN occ TIMESTAMP WITH TIME ZONE;
+UPDATE registration SET occ = NOW();
+ALTER TABLE registration ALTER COLUMN occ SET NOT NULL;

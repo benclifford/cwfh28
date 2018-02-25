@@ -5,6 +5,7 @@ module DB where
 import Control.Exception (bracket)
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Database.PostgreSQL.Simple as PG
+import qualified Database.PostgreSQL.Simple.Time as PGT
 import qualified Database.PostgreSQL.Simple.SOP as PGS
 
 import Registration
@@ -22,3 +23,9 @@ selectByNonce identifier = do
     [r] -> return r
     [] -> error $ "selectByNonce: no rows returned for " ++ identifier
     _ -> error $ "selectByNonce: multiple rows returned for " ++ identifier
+
+generateOCC :: IO PGT.ZonedTimestamp
+generateOCC = do
+  [[n]] <- withDB $ \conn -> PG.query conn "SELECT NOW()" ()
+  return n
+
